@@ -15,7 +15,7 @@ NAME := btc
 CXX := c++
 CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -pedantic
 
-srcs := main.cpp
+srcs := main.cpp BitcoinExchange.cpp
 objs := $(addprefix obj/, $(srcs:.cpp=.o))
 
 all: $(NAME)
