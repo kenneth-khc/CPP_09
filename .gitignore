@@ -1,4 +1,9 @@
+*.json
 .cache/
 *.o
-*.json
+obj/
+a.out
+btc
+.envrc
+.direnv/
 
