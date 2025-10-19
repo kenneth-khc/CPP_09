@@ -27,6 +27,7 @@
               gdb
               bear
             ];
+            hardeningDisable = [ "all" ];
           };
           shellHook = ''
             export SHELL=${lib.getExe pkgs.bash};
