@@ -12,9 +12,11 @@
 
 #include "PmergeMe.hpp"
 #include <algorithm>
+#include <iterator>
 #include <utility>
 #include <ostream>
 #include <vector>
+#include <set>
 
 const char* GREEN = "\033[0;32m";
 const char* RED = "\033[0;31m";
@@ -168,11 +170,22 @@ flattenMainChain(const std::vector<PmergeMe::Element>& mainChain)
 	return vec;
 }
 
+typedef std::set<int>::iterator	SetIter;
 void	PmergeMe::parse(char **args, size_type count)
 {
+	std::set<int>				parsedNumbers;
+	std::pair<SetIter, bool>	result;
+
 	for (size_type i = 0; i < count; ++i)
 	{
 		int	num = validatePositiveInteger(args[i]);
+		result = parsedNumbers.insert(num);
+		if (result.second == false)
+		{
+			std::cerr << "Error: duplicate number `" << num
+					  << "` found, expected unique numbers" << std::endl;
+			std::exit(1);
+		}
 		vec.push_back(num);
 	}
 	printNumbers(vec, "Before   ", RED);
