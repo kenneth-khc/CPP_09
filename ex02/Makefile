@@ -13,10 +13,11 @@
 NAME := PmergeMe
 
 CXX := c++
-CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -pedantic
+CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -MMD -pedantic
 
 srcs := main.cpp PmergeMe.cpp
 objs := $(addprefix obj/, $(srcs:.cpp=.o))
+deps := $(objs:%.o=%.d)
 
 all: $(NAME)
 
@@ -25,6 +26,7 @@ $(NAME): $(objs)
 
 obj/%.o: %.cpp | obj
 	$(CXX) $(CXXFLAGS) $< -c -o $@
+
 
 obj:
 	@mkdir -p obj/
@@ -40,7 +42,9 @@ re: fclean all
 debug: CXXFLAGS += -g3 -O0
 debug: $(NAME)
 
-fsan: CXXFLAGS += -fsanitize=address -g3
+fsan: CXXFLAGS += -fsanitize=address -g3 -O0
 fsan: $(NAME)
 
 .PHONY: all clean fclean re debug fsan
+
+-include $(deps)
