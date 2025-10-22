@@ -12,7 +12,7 @@
 
 #include "PmergeMe.hpp"
 #include <algorithm>
-#include <iterator>
+#include <limits>
 #include <utility>
 #include <ostream>
 #include <vector>
@@ -37,17 +37,21 @@ int	PmergeMe::Int::comparisons= 0;
 bool	PmergeMe::Int::operator<(const Int& rhs) const
 {
 	++comparisons;
+	// std::cout << value << " < " << rhs << '\n';
 	return this->value < rhs.value;
 }
 
 bool	PmergeMe::Int::operator>(const Int& rhs) const
 {
 	++comparisons;
+	// std::cout << value << " > " << rhs << '\n';
 	return this->value > rhs.value;
 }
 
 bool	PmergeMe::Int::operator==(const Int& rhs) const
 {
+	++comparisons;
+	// std::cout << value << " == " << rhs << '\n';
 	return this->value == rhs.value;
 }
 
@@ -70,38 +74,6 @@ void	print(const PmergeMe::Int& num)
 	std::cout << num << " ";
 }
 
-void	printPair(const PmergeMe::Pair& pair)
-{
-	std::cout << "{";
-	const size_type	firstSize = pair.first.size();
-	const size_type	secondSize = pair.second.size();
-	for (size_type i = 0; i < firstSize; ++i)
-	{
-		std::cout << pair.first[i];
-		if (i != firstSize - 1)
-		{
-			std::cout << ",";
-		}
-	}
-	std::cout << "|";
-	for (size_type i = 0; i < secondSize; ++i)
-	{
-		std::cout << pair.second[i];
-		if (i != secondSize - 1)
-		{
-			std::cout << ",";
-		}
-	}
-	std::cout << "}";
-}
-
-void	printPairs(const std::vector<PmergeMe::Pair>& pairs)
-{
-	std::cout << "-\n";
-	std::for_each(pairs.begin(), pairs.end(), printPair);
-	std::cout << "\n-\n";
-}
-
 template <typename T>
 void	printNumbers(const T& container, const char* label, const char* colour = RED)
 {
@@ -110,21 +82,47 @@ void	printNumbers(const T& container, const char* label, const char* colour = RE
 	std::cout << '\n';
 }
 
-void	printMainChain(const std::vector<PmergeMe::Element>& main, const char* message = "main")
+
+void
+PmergeMe::printMainChain(const std::vector<Element>& main, const char* message) const
 {
-	for (size_type i = 0; i < main.size(); ++i)
+	std::cout << GREEN << message << ':' << C_RESET << ' ';
+	for (MainChainConstIter it = main.begin(); it != main.end(); ++it)
 	{
-		printNumbers(main[i], message);
+		std::cout << '|';
+		const Vec& v = *it;
+		for (VecConstIter vit = v.begin(); vit != v.end(); ++vit)
+		{
+			std::cout << *vit;
+			if (vit != v.end() - 1)
+			{
+				std::cout << ',';
+			}
+		}
+		std::cout << "| ";
 	}
+	std::cout << '\n';
 }
 
-void	printPend(const std::vector<PmergeMe::BoundedPendEle>& pend)
+void	PmergeMe::printPend(const std::vector<PendElement>& pend) const
 {
-	for (size_type i = 0; i < pend.size(); ++i)
+	std::cout << "Pend:\n";
+	for (PendConstIter it = pend.begin();
+		 it != pend.end();
+		 ++it)
 	{
-		const std::vector<PmergeMe::Int>&	pe = pend[i].first;
-		printNumbers(pe, "pend");
-		std::cout << "Bound to idx " << pend[i].second << '\n';
+		std::cout << "|";
+		const PendElement&	pair = *it;
+		const Vec&			v = pair.first;
+		for (VecConstIter itt = v.begin(); itt != v.end(); ++itt)
+		{
+			std::cout << *itt;
+			if (itt != pair.first.end() - 1)
+			{
+				std::cout <<",";
+			}
+		}
+		std::cout << "| -> " << pair.second << '\n';
 	}
 }
 
@@ -133,44 +131,34 @@ std::ostream&	operator<<(std::ostream& os, const PmergeMe::Int& num)
 	return os << num.value;
 }
 
-std::vector<PmergeMe::Int>	flattenPairs(const std::vector<PmergeMe::Pair>& pairs)
+std::vector<PmergeMe::Int>
+PmergeMe::flatten(const std::vector<Pair>& pairs) const
 {
-	std::vector<PmergeMe::Int>	vec;
-
-	for (size_type i = 0; i < pairs.size(); ++i)
+	std::vector<Int>	vec;
+	std::vector<Pair>::const_iterator	iter = pairs.begin();
+	std::vector<Pair>::const_iterator	end = pairs.end();
+	for (; iter != end; ++iter)
 	{
-		const PmergeMe::Pair&				pair = pairs[i];
-		const std::vector<PmergeMe::Int>&	first = pair.first;
-		const std::vector<PmergeMe::Int>&	second = pair.second;
-		for (size_type i = 0; i < first.size(); ++i)
-		{
-			vec.push_back(first[i]);
-		}
-		for (size_type i = 0; i < second.size(); ++i)
-		{
-			vec.push_back(second[i]);
-		}
+		vec.insert(vec.end(), iter->first.begin(), iter->first.end());
+		vec.insert(vec.end(), iter->second.begin(), iter->second.end());
 	}
 	return vec;
 }
 
 std::vector<PmergeMe::Int>
-flattenMainChain(const std::vector<PmergeMe::Element>& mainChain)
+PmergeMe::flatten(const std::vector<Element>& mainChain) const
 {
-	std::vector<PmergeMe::Int>	vec;
+	std::vector<Int>	vec;
+	std::vector<Element>::const_iterator	iter = mainChain.begin();
+	std::vector<Element>::const_iterator	end = mainChain.end();
 
-	for (size_type i = 0; i < mainChain.size(); ++i)
+	for (; iter != end; ++iter)
 	{
-		const PmergeMe::Element&	element = mainChain[i];
-		for (size_type j = 0; j < element.size(); ++j)
-		{
-			vec.push_back(element[j]);
-		}
+		vec.insert(vec.end(), iter->begin(), iter->end());
 	}
 	return vec;
 }
 
-typedef std::set<int>::iterator	SetIter;
 void	PmergeMe::parse(char **args, size_type count)
 {
 	std::set<int>				parsedNumbers;
@@ -188,217 +176,239 @@ void	PmergeMe::parse(char **args, size_type count)
 		}
 		vec.push_back(num);
 	}
-	printNumbers(vec, "Before   ", RED);
+	// printNumbers(vec, "Before   ", RED);
 }
 
-
-
-// PmergeMe::Bound	findBound(const std::vector<PmergeMe::Element>& mainChain, Int number)
-// {
-// 	PmergeMe::Bound it = std::find(mainChain.begin(), mainChain.end(), number);
-// 	return it;
-// }
-
 std::vector<PmergeMe::Pair>
-createPairs(const std::vector<PmergeMe::Int>& sequence,
-			size_type elementSize,
-			size_type elementCount)
+PmergeMe::createPairs(std::vector<Int>& sequence,
+					  size_type elementSize,
+					  size_type elementCount) const
 {
-	std::vector<PmergeMe::Pair>	pairs;
-
-	// TODO: double check the condition to terminate the loop
-	size_type	eleCreated = 0;
-	// for (size_type i = 0; i <= sequence.size() / 2;)
-	for (size_type i = 0; eleCreated < elementCount;)
+	std::vector<Pair>	pairs;
+	VecIter				iter = sequence.begin();
+	for (size_type created = 0; created < elementCount; created += 2)
 	{
-		std::vector<PmergeMe::Int>	first;
-		std::vector<PmergeMe::Int>	second;
-		for (size_type count = 0; count < elementSize; ++count, ++i)
-		{
-			first.push_back(sequence[i]);
-		}
-		++eleCreated;
-		for (size_type count = 0; count < elementSize; ++count, ++i)
-		{
-			second.push_back(sequence[i]);
-		}
-		++eleCreated;
+		std::vector<Int>	first(iter, iter + elementSize);
+		iter += elementSize;
+		std::vector<Int>	second(iter, iter + elementSize);
+		iter += elementSize;
 		pairs.push_back(std::make_pair(first, second));
 	}
 	return pairs;
 }
 
-void	sortPairs(std::vector<PmergeMe::Pair>& pairs)
+void	PmergeMe::sortPairs(std::vector<Pair>& pairs) const
 {
-	for (size_type i = 0; i < pairs.size(); ++i)
+	std::vector<Pair>::iterator	iter = pairs.begin();
+	std::vector<Pair>::iterator	end = pairs.end();
+	for (; iter != end; ++iter)
 	{
-		PmergeMe::Pair&	pair = pairs[i];
-		PmergeMe::Int&	lhs = pair.first.back();
-		PmergeMe::Int&	rhs = pair.second.back();
-		if (lhs > rhs)
+		Int&	lhs = iter->first.back();
+		Int&	rhs = iter->second.back();
+		if (rhs < lhs)
 		{
-			std::swap(pair.first, pair.second);
+			std::swap(iter->first, iter->second);
 		}
 	}
 }
 
-PmergeMe::Element
-createElement(const std::vector<PmergeMe::Int>& sequence,
-			  int& index,
-			  size_type elementSize)
+bool	PmergeMe::compareLessThan(const Element& lhs, const Element& rhs)
 {
-	PmergeMe::Element	element;
-	for (int i = 0; i < (int)elementSize; ++i, ++index)
-	{
-		element.push_back(sequence[index]);
-	}
-	return element;
+	return lhs.back() < rhs.back();
 }
 
-std::vector<PmergeMe::Element>
-doInsertions(std::vector<PmergeMe::Element>& mainChain,
-			 std::vector<PmergeMe::BoundedPendEle>& pend)
+size_type	PmergeMe::jacobsthal(size_type n) const
 {
-	// insert from pend
-	// TODO: jacobsthal numbers
-	while (!pend.empty())
+	if (n == 0)
 	{
-		const PmergeMe::BoundedPendEle&	pendEle = pend.back();
-		const PmergeMe::Element&		ele = pendEle.first;
-		int								idx = pendEle.second;
-		std::vector<PmergeMe::Element>::iterator	pos =
-			std::lower_bound(mainChain.begin(),
-							 mainChain.begin()+idx,
-							 ele);
-		std::cout << "inserting from pend\n";
-		mainChain.insert(pos, ele);
-		for (size_type i = 0; i < mainChain.size(); ++i)
-		{
-			printNumbers(mainChain[i], "main after inserting");
-		}
-		pend.pop_back();
+		return 0;
 	}
-	return mainChain;
+	else if (n == 1)
+	{
+		return 1;
+	}
+	return jacobsthal(n - 1) + jacobsthal(n - 2) * 2;
 }
 
-void	PmergeMe::fordJohnsonMergeInsertionSort()
+size_type	PmergeMe::maxPairingSize(size_type num) const
 {
-	std::vector<Int>	copy = vec;
-	size_type			elementSize = 1;
-	std::vector<Int>	sequenceAfterPairings = copy;
-	std::vector<Int>	oldSequence = copy;
-	while (elementSize <= oldSequence.size() / 2)
+	if (num % 2 != 0)
 	{
-		const size_type	elementCount = oldSequence.size() / elementSize;
-		// bool			hasLeftover = elementCount % 2;
-		bool	hasLeftover = oldSequence.size() % 2;
-		// create pairs
-		std::vector<Pair>	pairs = createPairs(
-									oldSequence,
-									elementSize,
-									hasLeftover ? elementCount-1 : elementCount);
-		printPairs(pairs);
+		return num - 1;
+	}
+	return num;
+}
+
+size_type	PmergeMe::mergePairs(std::vector<Int>& unsorted) const
+{
+	std::vector<Int>	sequence = unsorted;
+	size_type			eleSize = 1;
+
+	// we merge and sort pairs as long as we can form a pair of 2 elements.
+	// once the size of our element gets over half of the sequence, we break
+	// and return that size to be used as the initial size for the insertion
+	while (eleSize <= sequence.size() / 2)
+	{
+		// determine the number of elements that can be created to form pairs,
+		// then sort the elements within each pair.
+		// the number of elements that can be created must be even, otherwise
+		// there would be a leftover who has no element to compare with, in that
+		// case, store the leftovers temporarily to be appended back to the
+		// flattened sequence.
+		size_type			eleCount = maxPairingSize(sequence.size() / eleSize);
+		std::vector<Int>	leftovers = storeLeftovers(sequence, eleCount, eleSize);
+		std::vector<Pair>	pairs = createPairs(sequence, eleSize, eleCount);
+
 		sortPairs(pairs);
-		printPairs(pairs);
-		sequenceAfterPairings = flattenPairs(pairs);
-		printNumbers(sequenceAfterPairings, "After flattening");
-		if (hasLeftover)
-		{
-			std::vector<Int>	leftovers;
-			// size_type			remainingCount = oldSequence.size() - ((elementCount-1) * elementSize);
-			size_type			remainingCount = oldSequence.size() - sequenceAfterPairings.size();
-			std::vector<Int>::iterator startIt = oldSequence.end() - remainingCount;
-			while (startIt != oldSequence.end())
-			{
-				leftovers.push_back(*startIt);
-				++startIt;
-			}
-			sequenceAfterPairings.insert(sequenceAfterPairings.end(), leftovers.begin(), leftovers.end());
-
-			printNumbers(leftovers, "leftovers");
-		}
-		printNumbers(sequenceAfterPairings, "After adding straggler");
-		oldSequence = sequenceAfterPairings;
-		elementSize *= 2;
+		sequence = flatten(pairs);
+		sequence.insert(sequence.end(), leftovers.begin(), leftovers.end());
+		eleSize *= 2;
 	}
+	unsorted = sequence;
+	return eleSize / 2;
+}
 
-	// we ran out of elements to form pairs so we are done
-	// now we initialize main chain and pend to start inserting
-
-	// elementSize is doubled to break out of the previous loop
-	// so we need to half it back here to a viable size
-	int	eSize = elementSize / 2; 
-	std::vector<Int>	sequence = sequenceAfterPairings;
-	std::vector<Int>	prevSequence = sequence;
-	while (eSize >= 1)
+std::vector<PmergeMe::Int>
+PmergeMe::storeLeftovers(const std::vector<Int>& sequence,
+						 size_type eleCount,
+						 size_type eleSize) const
+{
+	std::vector<PmergeMe::Int>	leftovers;
+	size_type	leftoverCount = sequence.size() %
+								(eleCount * eleSize);
+	if (leftoverCount)
 	{
+		leftovers.insert(leftovers.end(),
+						 sequence.end() - leftoverCount,
+						 sequence.end());
+	}
+	return leftovers;
+}
+
+std::vector<PmergeMe::Int>
+PmergeMe::insert(const std::vector<Int>& copy, size_type eleSize) const
+{
+	std::vector<Int>	sequence = copy;
+	while (eleSize >= 1)
+	{
+		size_type			eleCount = sequence.size() / eleSize;
+		std::vector<Int>	leftovers = storeLeftovers(sequence,
+													   eleCount,
+													   eleSize);
 		std::vector<Element>		mainChain;
-		std::vector<BoundedPendEle>	pend;
-		std::vector<Int>			remaining;
-		int							sequencePos = 0;
-		size_type	elementCount = sequence.size() / eSize;
-		// bool			hasLeftover = elementCount % 2;
-		bool	hasLeftover = sequence.size() % 2;
-		if (hasLeftover)
-			--elementCount;
-
-		// create main chain and pend
-		std::vector<Element>	elementBs;
-		size_type				elesCreated = 0;
-		// while ((int)sequence.size() - sequencePos >= eSize)
-		while (elesCreated < elementCount)
+		std::vector<PendElement>	pend;
+		size_type					created = 0;
+		VecConstIter				iter = sequence.begin();
+		for (bool a = false;; a = !a)
 		{
-			Element	b = createElement(sequence, sequencePos, eSize);
-			++elesCreated;
-			elementBs.push_back(b);
-			if (elesCreated >= elementCount)
+			Element	ele(iter, iter + eleSize);
+			if (a || created == 0)
 			{
-				break ;
+				mainChain.push_back(ele);
 			}
-			Element	a = createElement(sequence, sequencePos, eSize);
-			++elesCreated;
-			mainChain.push_back(a);
+			else
+			{
+				pend.push_back(std::make_pair(ele, mainChain.size()));
+			}
+			iter += eleSize;
+			++created;
+			if (created >= eleCount)
+			{
+				break;
+			}
 		}
-		while ((size_type)sequencePos < sequence.size())
-		{
-			remaining.push_back(sequence[sequencePos]);
-			++sequencePos;
-		}
-		mainChain.insert(mainChain.begin(), elementBs.front());
-		for (size_type i = 1; i < elementBs.size(); ++i)
-		{
-			const Element&	b = elementBs[i];
-			pend.push_back(std::make_pair(b, i+1));
-		}
-		printMainChain(mainChain);
-		printPend(pend);
-
 		if (!pend.empty())
 		{
-			mainChain = doInsertions(mainChain, pend);
+			insertPendElementsIntoMainChain(mainChain, pend);
 		}
-		sequence = flattenMainChain(mainChain);
-		if (hasLeftover)
-		{
-			std::vector<Int>			leftovers;
-			// size_type			remainingCount = oldSequence.size() - ((elementCount-1) * elementSize);
-			size_type					remainingCount = prevSequence.size() - sequence.size();
-			std::vector<Int>::iterator	startIt = prevSequence.end() - remainingCount;
-			while (startIt != prevSequence.end())
-			{
-				leftovers.push_back(*startIt);
-				++startIt;
-			}
-			sequence.insert(sequence.end(), leftovers.begin(), leftovers.end());
-			printNumbers(leftovers, "leftovers");
-		}
-		// for (size_type i = 0; i < remaining.size(); ++i)
-		// {
-		// 	sequence.push_back(remaining[i]);
-		// }
+		sequence = flatten(mainChain);
+		sequence.insert(sequence.end(), leftovers.begin(), leftovers.end());
+		eleSize /= 2;
+	}
+	return sequence;
+}
 
-		eSize /= 2;
-		std::cout << "loop done\n";
+bool	PmergeMe::validateSorted(const std::vector<Int>& sequence) const
+{
+	std::vector<Int>::const_iterator	it = std::adjacent_find(sequence.begin(),
+																sequence.end(),
+																std::greater<Int>());
+	bool	isSorted = sequence.size() == vec.size() &&
+					   it == sequence.end();
+	if (isSorted)
+	{
+		std::cout << GREEN << "SORTED" << C_RESET << '\n';
+	}
+	else
+	{
+		std::cout << RED << "UNSORTED" << C_RESET << '\n';
+	}
+	printNumbers(sequence, "After", GREEN);
+	if (isSorted)
+	{
+		std::cout << GREEN << "SORTED" << C_RESET << '\n';
+		// std::exit(0);
+		return true;
+	}
+	else
+	{
+		std::cout << RED << "UNSORTED" << C_RESET << '\n';
+		// std::exit(1);
+		return false;
+	}
+}
+
+std::vector<PmergeMe::Int>	PmergeMe::fordJohnsonMergeInsertionSort() const
+{
+	std::vector<Int>	unsorted = vec;
+	int 				elementSize = mergePairs(unsorted);
+	std::vector<Int>	sequence = insert(unsorted, elementSize);
+
+	logAndResetComparisons();
+
+	return sequence;
+}
+
+void
+PmergeMe::insertPendElementsIntoMainChain(std::vector<Element>& mainChain,
+					   std::vector<PendElement>& pend) const
+{
+	int	term = 3;
+	int	insertedCount = 0;
+
+	while (!pend.empty())
+	{
+		size_type	jacobsthalNumber = jacobsthal(term);
+		PendRevIter	pendEle = pend.rbegin();
+		PendRevIter	end = pend.rend();
+		for (PendRevIter iter = pend.rbegin();
+			 iter != end && pendEle->second > jacobsthalNumber;
+			 ++iter)
+		{
+			if (iter->second <= jacobsthalNumber)
+			{
+				pendEle = iter;
+			}
+		}
+		while (pendEle != pend.rend())
+		{
+			const std::vector<Int>&	group = pendEle->first;
+			size_type				boundIndex = pendEle->second;
+			MainChainIter			searchEnd = mainChain.begin() +
+												boundIndex + insertedCount;
+			const std::vector<Int>	element(group.begin(), group.end());
+			const MainChainIter		insertPos =
+				std::lower_bound(mainChain.begin(),
+				searchEnd,
+				element,
+				compareLessThan);
+
+			mainChain.insert(insertPos, element);
+			++insertedCount;
+			pend.erase(pendEle.base()-1);
+			++pendEle;
+		}
+		++term;
 	}
 }
 
