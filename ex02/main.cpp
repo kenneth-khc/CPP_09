@@ -48,15 +48,6 @@ void	print(PmergeMe::Int num)
 // 	std::cout << '\n';
 // }
 
-// typedef	std::vector<PmergeMe::Int>(PmergeMe::*SortingFunc)();
-
-// void	PmergeMe::benchmark(std::function<std::vector<Int>(PmergeMe&)> sortingFunc)
-// {
-// 	sortingFunc(*this);
-// 	// std::vector<PmergeMe::Int> sorted = SortingFunc();
-
-// }
-
 template <typename T, typename Ret>
 Ret	benchmark(Ret (T::*sortingFunc)() const, T& obj, const char* containerType)
 {
@@ -64,7 +55,7 @@ Ret	benchmark(Ret (T::*sortingFunc)() const, T& obj, const char* containerType)
 
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &execStart);
 
-	std::vector<PmergeMe::Int>	sorted = (obj.*sortingFunc)();
+	Ret	sorted = (obj.*sortingFunc)();
 
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &execEnd);
 
@@ -77,8 +68,6 @@ Ret	benchmark(Ret (T::*sortingFunc)() const, T& obj, const char* containerType)
 	unsigned long	elapsedNanosec = endNanosec - startNanosec;
 
 	double	microseconds = elapsedNanosec / THOUSAND;
-	// double	startmicroseconds = static_cast<double>(execStart.tv_sec) * 1e6 + static_cast<double>(execStart.tv_nsec) / 1e3;
-	// double	endmicroseconds= static_cast<double>(execEnd.tv_sec) * 1e6 + static_cast<double>(execEnd.tv_nsec) / 1e3;
 	double	milliseconds= elapsedNanosec / MILLION;
 	double	seconds = elapsedNanosec / BILLION;
 
@@ -115,8 +104,13 @@ int	main(int argc, char** argv)
 		}
 	}
 	std::cout << '\n';
+
+	PmergeMe::Int::comparisons = 0;
 	std::vector<PmergeMe::Int>	sorted =
 		benchmark(&PmergeMe::fordJohnsonMergeInsertionSort, sorter, "std::vector");
+
+	std::list<PmergeMe::Int>	sortedList =
+		benchmark(&PmergeMe::listMergeInsertion, sorter, "std::list");
 
 	std::vector<PmergeMe::Int>::iterator	iter = sorted.begin();
 	std::vector<PmergeMe::Int>::iterator	end = sorted.end();
@@ -130,23 +124,5 @@ int	main(int argc, char** argv)
 		}
 	}
 	std::cout << '\n';
-	sorter.logAndResetComparisons();
-	// sorter.benchmark(PmergeMe::fordJohnsonMergeInsertionSort);
-	// SortingFunc	f = sorter.fordJohnsonMergeInsertionSort;
-	// bool	isSorted = sorter.validateSorted(sorted);
-
-
-
-	// std::clock_t	execEnd = std::clock();
-	// double			timeSpent = (double)(execEnd - execStart) / CLOCKS_PER_SEC;
-	// std::cout << "> " << timeSpent << '\n';
-
-	// fordJohnsonMergeInsertion(nums);
-	// doSort(nums, fordJohnsonMergeInsertion);
-	// doSort(nums, Int::bubbleSort);
-	// doSort(nums, Int::insertionSort);
-	// doSort(nums, Int::mergeSort);
-
 	return 0;
-	// return isSorted ? 0 : 1;
 }
