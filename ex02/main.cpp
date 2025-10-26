@@ -10,111 +10,31 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-
-#include <cstdlib>
-#include <ctime>
-#include <iostream>
 #include "PmergeMe.hpp"
-#include <time.h>
+#include <iostream>
+#include <deque>
+#include <vector>
 
-#include <cmath>
-
-void	print(PmergeMe::Int num)
+void	printBefore(int count, char** args)
 {
-	std::cout << num.value << "\n";
-}
-
-// template <typename T>
-// void	doSort(const T& numbers, T (*sort)(const T&))
-// {
-// 	const char* GREEN = "\033[0;32m";
-// 	const char* RED = "\033[0;31m";
-// 	const char* C_RESET = "\033[0m";
-
-// 	Int::comparisons = 0;
-// 	const T	sorted = sort(numbers);
-// 	typename T::const_iterator	it = std::adjacent_find(sorted.begin(), sorted.end(), std::greater<Int>());
-// 	bool	isSorted = sorted.size() > 1 && it == sorted.end();
-// 	if (isSorted)
-// 	{
-// 		std::cout << GREEN << "SORTED            " << C_RESET;
-// 	}
-// 	else
-// 	{
-// 		std::cout << RED << "UNSORTED          " << C_RESET;
-// 	}
-// 	Int::print(sorted);
-// 	Int::printComparisons();
-// 	std::cout << '\n';
-// }
-
-template <typename T, typename Ret>
-Ret	benchmark(Ret (T::*sortingFunc)() const, T& obj, const char* containerType)
-{
-	struct timespec	execStart, execEnd;
-
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &execStart);
-
-	Ret	sorted = (obj.*sortingFunc)();
-
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &execEnd);
-
-	const double	THOUSAND = 1000.;
-	const double	MILLION = 1000000.;
-	const double	BILLION = 1000000000.;
-
-	unsigned long	startNanosec = execStart.tv_sec * BILLION + execStart.tv_nsec;
-	unsigned long	endNanosec = execEnd.tv_sec * MILLION + execEnd.tv_nsec;
-	unsigned long	elapsedNanosec = endNanosec - startNanosec;
-
-	double	microseconds = elapsedNanosec / THOUSAND;
-	double	milliseconds= elapsedNanosec / MILLION;
-	double	seconds = elapsedNanosec / BILLION;
-
-	size_type	size = sorted.size();
-	const char*	message = size == 1 ? "element" : "elements";
-	std::cout << "Time to process a range of " << size << ' ' << message
-			  << " with " << containerType << " : "
-			  << microseconds << " μs" << " / "
-			  << milliseconds << " ms" << " / "
-			  << seconds << " s" << '\n';
-
-	return sorted;
-}
-
-
-int	main(int argc, char** argv)
-{
-	if (argc == 1)
+	std::cout << "Before: ";
+	for (int i = 0; i < count; ++i)
 	{
-		std::cerr << "Error: expected list of positive numbers\n";
-		return 1;
-	}
-
-	PmergeMe	sorter;
-
-	sorter.parse(argv + 1, argc - 1);
-	std::cout << "Before:   ";
-	for (int i = 1; i < argc; ++i)
-	{
-		std::cout << argv[i];
-		if (i != argc - 1)
+		std::cout << args[i];
+		if (i != count - 1)
 		{
 			std::cout << " ";
 		}
 	}
 	std::cout << '\n';
+}
 
-	PmergeMe::Int::comparisons = 0;
-	std::vector<PmergeMe::Int>	sorted =
-		benchmark(&PmergeMe::fordJohnsonMergeInsertionSort, sorter, "std::vector");
-
-	std::list<PmergeMe::Int>	sortedList =
-		benchmark(&PmergeMe::listMergeInsertion, sorter, "std::list");
-
-	std::vector<PmergeMe::Int>::iterator	iter = sorted.begin();
-	std::vector<PmergeMe::Int>::iterator	end = sorted.end();
-	std::cout << "After:    ";
+template <typename T>
+void	printAfter(const T& container)
+{
+	std::cout << "After : ";
+	typename T::const_iterator	iter = container.begin();
+	typename T::const_iterator	end = container.end();
 	for (; iter != end; ++iter)
 	{
 		std::cout << *iter;
@@ -124,5 +44,44 @@ int	main(int argc, char** argv)
 		}
 	}
 	std::cout << '\n';
+}
+
+int	main(int argc, char** argv)
+{
+	if (argc == 1)
+	{
+		std::cerr << "Error: expected list of positive numbers\n";
+		return 1;
+	}
+
+	PmergeMe<std::vector>	vecSorter(argc - 1, argv + 1);
+	PmergeMe<std::deque>	deqSorter(argc - 1, argv + 1);
+
+	printBefore(argc - 1, argv + 1);
+
+	std::vector<int> sortedVec = vecSorter.benchmark(&PmergeMe<std::vector>::mergeInsertionSort);
+	std::deque<int> sortedDeq = deqSorter.benchmark(&PmergeMe<std::deque>::mergeInsertionSort);
+
+	printAfter(sortedVec);
+
+	vecSorter.displayTimeTaken("std::vector");
+	deqSorter.displayTimeTaken("std::deque");
+
+#ifdef TESTS
+	const char* YELLOW = "\x1B[0;33m";
+	const char* RESET = "\x1B[0;0m";
+
+	std::cout << YELLOW << "Bubble sort:" << RESET << '\n';
+	PmergeMe<std::vector>	bubbleSorter(argc - 1, argv + 1);
+	std::vector<int> bubbleSorted = bubbleSorter.benchmark(&PmergeMe<std::vector>::bubbleSort);
+	bubbleSorter.displayTimeTaken("std::vector");
+
+	std::cout << YELLOW << "Insertion sort:" << RESET << '\n';
+	PmergeMe<std::vector>	insertionSorter(argc - 1, argv + 1);
+	std::vector<int> insertionSorted = insertionSorter.benchmark(&PmergeMe<std::vector>::insertionSort);
+	insertionSorter.displayTimeTaken("std::vector");
+
+#endif
+
 	return 0;
 }
