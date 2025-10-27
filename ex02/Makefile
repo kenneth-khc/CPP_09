@@ -10,12 +10,12 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME := RPN
+NAME := PmergeMe
 
 CXX := c++
-CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -pedantic -MMD
+CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -MMD -pedantic
 
-srcs := main.cpp RPN.cpp
+srcs := main.cpp
 objs := $(addprefix obj/, $(srcs:.cpp=.o))
 deps := $(objs:%.o=%.d)
 
@@ -38,12 +38,18 @@ fclean: clean
 
 re: fclean all
 
-debug: CXXFLAGS += -g3
+debug: CXXFLAGS += -g3 -O0
 debug: $(NAME)
 
-fsan: CXXFLAGS += -fsanitize=address -g3
+fsan: CXXFLAGS += -fsanitize=address -g3 -O0
 fsan: $(NAME)
 
-.PHONY: all clean fclean re debug fsan
+release: CXXFLAGS += -O3
+release: $(NAME)
+
+tests: CXXFLAGS += -D TESTS
+tests: $(NAME)
+
+.PHONY: all clean fclean re debug fsan release tests
 
 -include $(deps)
