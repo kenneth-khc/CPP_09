@@ -18,13 +18,37 @@
 
 typedef std::map<std::string, float>	Database;
 
-/**
- Parses a CSV file of Bitcoin exchange rates on a given date into a database. */
-Database	parseCsvFile(const char* = "data.csv");
+class	BitcoinExchange
+{
+public:
+	BitcoinExchange();
+	BitcoinExchange(const char* filename);
+	BitcoinExchange(const BitcoinExchange&);
+	~BitcoinExchange();
 
-/**
- Evaluates a text file with records of Bitcoin amounts on a given date, looking
- up the exchange rate on the given date and calculating the total value */
-void		evaluate(const Database&, const char* = "input.txt");
+	BitcoinExchange	operator=(const BitcoinExchange&);
+
+	/**
+	 Parses a CSV file of Bitcoin exchange rates on a given date into a database. */
+	void	parseCsvFile(const char* = "data.csv");
+
+	/** Evaluates an input file of dates and btcs and calculates the value
+	    with our loaded database */
+	void	evaluate(const char* inputFile = "input.txt") const;
+
+private:
+	Database	exchangeRates;
+
+	void		parseDate(const std::string&) const;
+	float		parseExchangeRate(const std::string&) const;
+	void		validateHeader(std::ifstream&) const;
+	float		parseValue(const std::string&) const;
+	float		calculateTotalValue(const std::string&, float) const;
+
+	std::string	trim(const std::string&) const;
+	std::string	leftTrim(const std::string&) const;
+	std::string	rightTrim(const std::string&) const;
+	void		logAndExit(const std::string&) const;
+};
 
 #endif

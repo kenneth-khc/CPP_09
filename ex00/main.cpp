@@ -16,14 +16,13 @@
 
 int	main(int argc, char **argv)
 {
-	const Database	exchangeRates = parseCsvFile();
 	if (argc < 2)
 	{
 		std::cerr << "Error: missing file to evaluate, usage: ./btc <file>\n";
 		std::exit(1);
 	}
-	else
-	{
-		evaluate(exchangeRates, argv[1]);
-	}
+
+	BitcoinExchange	bitcoinExchange("data.csv");
+
+	bitcoinExchange.evaluate(argv[1]);
 }
