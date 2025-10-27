@@ -13,10 +13,11 @@
 NAME := btc
 
 CXX := c++
-CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -pedantic
+CXXFLAGS := -Wall -Werror -Wextra -std=c++98 -pedantic -MMD
 
 srcs := main.cpp BitcoinExchange.cpp
 objs := $(addprefix obj/, $(srcs:.cpp=.o))
+deps := $(objs:%.o=%.d)
 
 all: $(NAME)
 
@@ -44,3 +45,5 @@ fsan: CXXFLAGS += -fsanitize=address -g3
 fsan: $(NAME)
 
 .PHONY: all clean fclean re debug fsan
+
+-include $(deps)
