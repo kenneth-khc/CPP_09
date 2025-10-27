@@ -22,7 +22,7 @@ int	main(int argc, char** argv)
 		return 1;
 	}
 
-	int result = evaluateRpn(argv[1]);
+	int result = RPN::evaluateExpression(argv[1]);
 	std::cout << result << std::endl;
 	return 0;
 }

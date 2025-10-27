@@ -10,30 +10,32 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <cctype>
+#include "RPN.hpp"
+#include <cstdlib>
 #include <sstream>
 #include <string>
 #include <iostream>
 #include <stack>
-#include <cstdlib>
-#include <stdexcept>
+#include <list>
 
-typedef std::string::size_type	size_type;
+/****************** privated *******************/
 
-namespace
+RPN::RPN() {}
+
+RPN::~RPN() {}
+
+RPN::RPN(const RPN&) {}
+
+RPN	RPN::operator=(const RPN&) { return *this; }
+
+/***********************************************/
+
+int	RPN::evaluateExpression(const std::string& expression)
 {
-	void	logAndExit(const std::string&);
-	bool	isValidOperator(char);
-	int		getOperand(std::stack<int>&);
-	int		calculate(int, int, char);
-}
-
-int	evaluateRpn(const std::string& expression)
-{
-	std::stack<int>		operands;
-	std::stringstream	errmsg;
-	std::stringstream	input(expression);
-	std::string			token;
+	std::stack< int, std::list<int> >	operands;
+	std::stringstream					errmsg;
+	std::stringstream					input(expression);
+	std::string							token;
 
 	while (input >> token)
 	{
@@ -75,55 +77,52 @@ int	evaluateRpn(const std::string& expression)
 	return operands.top();
 }
 
-namespace
+bool	RPN::isValidOperator(char c)
 {
-	bool	isValidOperator(char c)
-	{
-		return c == '+' || c == '-' || c == '*' || c == '/';
-	}
+	return c == '+' || c == '-' || c == '*' || c == '/';
+}
 
-	void	logAndExit(const std::string& message)
+int	RPN::getOperand(std::stack< int, std::list<int> >& operands)
+{
+	if (operands.empty())
 	{
-		std::cerr << "Error: " << message << std::endl;
-		std::exit(1);
+		throw std::out_of_range("no operands");
 	}
+	else
+	{
+		int	operand = operands.top();
+		operands.pop();
+		return operand;
+	}
+}
 
-	int	getOperand(std::stack<int>& operands)
+int	RPN::calculate(int lhs, int rhs, char operation)
+{
+	switch (operation)
 	{
-		if (operands.empty())
+		case '+':
 		{
-			throw std::out_of_range("no operands");
+			return lhs + rhs;
 		}
-		else
+		case '-':
 		{
-			int	operand = operands.top();
-			operands.pop();
-			return operand;
+			return lhs - rhs;
 		}
+		case '*':
+		{
+			return lhs * rhs;
+		}
+		case '/':
+		{
+			if (rhs == 0) logAndExit("dividing by 0");
+			return lhs / rhs;
+		}
+		default: throw std::invalid_argument("invalid operator");
 	}
+}
 
-	int	calculate(int lhs, int rhs, char operation)
-	{
-		switch (operation)
-		{
-			case '+':
-			{
-				return lhs + rhs;
-			}
-			case '-':
-			{
-				return lhs - rhs;
-			}
-			case '*':
-			{
-				return lhs * rhs;
-			}
-			case '/':
-			{
-				if (rhs == 0) logAndExit("dividing by 0");
-				return lhs / rhs;
-			}
-			default: throw std::invalid_argument("invalid operator");
-		}
-	}
+void	RPN::logAndExit(const std::string& message)
+{
+	std::cerr << "Error: " << message << std::endl;
+	std::exit(1);
 }

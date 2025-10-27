@@ -11,5 +11,23 @@
 /* ************************************************************************** */
 
 #include <string>
+#include <stack>
+#include <list>
 
-int	evaluateRpn(const std::string&);
+class	RPN
+{
+public:
+	static int	evaluateExpression(const std::string&);
+
+private:
+	RPN();
+	~RPN();
+	RPN(const RPN&);
+	RPN	operator=(const RPN&);
+
+	static bool	isValidOperator(char);
+	static int	getOperand(std::stack< int, std::list<int> >&);
+	static int	calculate(int lhs, int rhs, char operation);
+	static void	logAndExit(const std::string&);
+};
+
